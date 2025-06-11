@@ -4,7 +4,7 @@ An all-in-one mobile app that empowers anyone to respond to emergencies through 
 
 ## To Connect to GitHub
 1. Open VSCode and clone the repo
-2. Click <code> and copy the URL generated
+2. Click "Code" button and copy the URL generated
 
 ```
 git remote -v
