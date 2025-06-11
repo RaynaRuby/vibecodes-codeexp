@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   View, 
   Text, 
@@ -6,148 +6,376 @@ import {
   Image, 
   TouchableOpacity, 
   ScrollView,
-  Dimensions
+  Dimensions,
+  SafeAreaView
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { Ionicons, MaterialIcons, FontAwesome5 } from '@expo/vector-icons';
+import { Ionicons, MaterialIcons, FontAwesome5, MaterialCommunityIcons } from '@expo/vector-icons';
+import { AntDesign } from '@expo/vector-icons';
 
 export default function CPRQuizScreen() {
   const navigation = useNavigation();
-  const [currentStep, setCurrentStep] = useState(1);
-  const [voiceInstructions, setVoiceInstructions] = useState(true);
-
-  // Steps data
-  const steps = [
+  const [score, setScore] = useState(0);
+  const [currentQuestion, setCurrentQuestion] = useState(0);
+  const [selectedAnswer, setSelectedAnswer] = useState(null);
+  const [feedback, setFeedback] = useState(null);
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [quizCompleted, setQuizCompleted] = useState(false);
+  
+  // Quiz questions data
+  const questions = [
     {
       id: 1,
-      title: 'Check responsiveness',
-      description: 'Tap the person\'s shoulder and ask loudly, "Are you OK?" to check for responsiveness',
-      image: 'https://api.a0.dev/assets/image?text=CPR+checking+responsiveness+medical+emergency&aspect=1:1&seed=789',
+      type: 'roleplay',
+      scenario: 'What is the first thing you should do when someone collapses',
+      options: [
+        { id: 'check', text: 'Start chest compressions', isCorrect: true },
+        { id: 'walk', text: 'Check for responsiveness', isCorrect: false }
+      ],
+      correctFeedback: 'Great! Always check if the person is responsive first.',
+      incorrectFeedback: 'The correct first step is to check if the person is responsive before doing anything else.'
     },
     {
       id: 2,
-      title: 'Call for help',
-      description: 'If the person is unresponsive, call emergency services immediately or ask someone else to call',
-      image: 'https://api.a0.dev/assets/image?text=Calling+emergency+911+for+help&aspect=1:1&seed=790',
+      type: 'roleplay',
+      scenario: 'What number should you call in an emergency in',
+      options: [
+        { id: 'check', text: '995', isCorrect: true },
+        { id: 'walk', text: '911', isCorrect: false }
+      ],
+      correctFeedback: 'That’s right! 995 connects you to emergency medical services in Singapore.',
+      incorrectFeedback: 'The correct number is 995 for medical emergencies in Singapore.'
     },
     {
       id: 3,
-      title: 'Check breathing',
-      description: 'Look, listen, and feel for breathing for no more than 10 seconds',
-      image: 'https://api.a0.dev/assets/image?text=Check+breathing+CPR+procedure&aspect=1:1&seed=791',
+      type: 'roleplay',
+      scenario: 'What is the correct hand position for chest compressions?',
+      options: [
+        { id: 'check', text: 'Both hands in the center of the chest', isCorrect: true },
+        { id: 'walk', text: 'One hand on each side of the chest', isCorrect: false }
+      ],
+      correctFeedback: 'Yes! Place both hands on the center of the chest.',
+      incorrectFeedback: 'You should place both hands in the center of the chest, not on the sides.'
+    },
+    {
+      id: 4,
+      type: 'roleplay',
+      scenario: 'How deep should you press during adult chest compressions?',
+      options: [
+        { id: 'check', text: 'About 5 to 6 cm', isCorrect: true },
+        { id: 'walk', text: 'Just 2 cm', isCorrect: false }
+      ],
+      correctFeedback: ' Well done! 5 to 6 cm is the recommended depth for adults.',
+      incorrectFeedback: 'Chest compressions should go 5 to 6 cm deep for adults.'
+    },
+    {
+      id: 5,
+      type: 'roleplay',
+      scenario: 'What’s the recommended rate of chest compressions per minute?',
+      options: [
+        { id: 'check', text: '100–120', isCorrect: true },
+        { id: 'walk', text: '60–80', isCorrect: false }
+      ],
+      correctFeedback: ' Nice! 100 to 120 compressions per minute is ideal.',
+      incorrectFeedback: 'The correct rate is 100 to 120 compressions per minute.'
     },
   ];
 
-  const currentStepData = steps.find(step => step.id === currentStep);
+  // Get current question data
+  const currentQuestionData = questions[currentQuestion];
 
-  const toggleVoiceInstructions = () => {
-    setVoiceInstructions(!voiceInstructions);
-  };
-
-  const handleNext = () => {
-    if (currentStep < steps.length) {
-      setCurrentStep(currentStep + 1);
-    }
-  };
-
-  const handleBack = () => {
-    if (currentStep > 1) {
-      setCurrentStep(currentStep - 1);
+  // Handle answer selection
+  const handleAnswer = (answer) => {
+    setSelectedAnswer(answer);
+    
+    let isCorrect = false;
+    let feedbackText = '';
+    
+    if (currentQuestionData.type === 'factorcap') {
+      isCorrect = answer === currentQuestionData.correctAnswer;
+      feedbackText = isCorrect ? currentQuestionData.correctFeedback : currentQuestionData.incorrectFeedback;
     } else {
-      navigation.goBack();
+      // For roleplay questions
+      const selectedOption = currentQuestionData.options.find(option => option.id === answer);
+      isCorrect = selectedOption.isCorrect;
+      feedbackText = isCorrect ? currentQuestionData.correctFeedback : currentQuestionData.incorrectFeedback;
+    }
+    
+    // Update score
+    if (isCorrect) {
+      setScore(score + 5);
+      setFeedback({
+        text: "That's Correct!",
+        points: "+5 points",
+        explanation: feedbackText,
+        isCorrect: true
+      });
+    } else {
+      setScore(Math.max(0, score - 3)); // Ensure score doesn't go below 0
+      setFeedback({
+        text: "That's Incorrect!",
+        points: "-3 points",
+        explanation: feedbackText,
+        isCorrect: false
+      });
+    }
+    
+    setShowFeedback(true);
+  };
+  
+  // Handle moving to next question
+  const handleNextQuestion = () => {
+    if (currentQuestion < questions.length - 1) {
+      setCurrentQuestion(currentQuestion + 1);
+      setSelectedAnswer(null);
+      setShowFeedback(false);
+    } else {
+      // Quiz completed
+      setQuizCompleted(true);
     }
   };
 
-  return (
-    <View style={styles.container}>
-      {/* Header with close button */}
-      <View style={styles.header}>
-        <View style={styles.headerContent}>
-          <Text style={styles.headerTitle}>CPR</Text>
-          <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Ionicons name="close" size={28} color="#fff" />
-          </TouchableOpacity>
-        </View>
+  // Component for the progress bar
+  const ProgressBar = ({ current, total }) => {
+    const progressWidth = (current / total) * 100;
+    
+    return (
+      <View style={styles.progressBarContainer}>
+        {Array.from({ length: total }).map((_, index) => (
+          <View 
+            key={index} 
+            style={[
+              styles.progressSegment, 
+              index <= current ? styles.progressSegmentFilled : styles.progressSegmentEmpty
+            ]} 
+          />
+        ))}
       </View>
-
-      {/* Voice Instructions Toggle */}
-      <View style={styles.voiceToggleContainer}>
-        <Ionicons 
-          name={voiceInstructions ? "volume-high" : "volume-mute"} 
-          size={20} 
-          color={voiceInstructions ? "#333" : "#999"} 
-        />
-        <Text style={styles.voiceToggleText}>
-          Voice instructions: {voiceInstructions ? 'ON' : 'OFF'}
-        </Text>
-        <TouchableOpacity onPress={toggleVoiceInstructions}>
-          <View style={[
-            styles.toggleSwitch,
-            voiceInstructions ? styles.toggleSwitchOn : styles.toggleSwitchOff
-          ]}>
-            <View style={[
-              styles.toggleButton,
-              voiceInstructions ? styles.toggleButtonOn : styles.toggleButtonOff
-            ]} />
-          </View>
+    );
+  };
+  
+  // RolePlay question component
+  const RolePlayQuestion = ({ data }) => (
+    <View style={styles.questionContent}>
+      <View style={styles.scenarioHeader}>
+        <Text style={styles.scenarioText}>{data.scenario}</Text>
+      </View>
+      
+      <Image 
+        source={{ uri: 'https://api.a0.dev/assets/image?text=First+aid+emergency+situation+person+collapsed&aspect=16:9&seed=123' }} 
+        style={styles.scenarioImage}
+      />
+      
+      <View style={styles.optionsContainer}>
+        {data.options.map(option => (
+          <TouchableOpacity 
+            key={option.id}
+            style={[
+              styles.optionButton,
+              selectedAnswer === option.id && option.isCorrect && showFeedback && styles.correctOptionButton,
+              selectedAnswer === option.id && !option.isCorrect && showFeedback && styles.wrongOptionButton,
+            ]}
+            onPress={() => handleAnswer(option.id)}
+            disabled={showFeedback}
+          >
+            <Text style={styles.optionText}>{option.text}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+    </View>
+  );
+  
+  // Facts or Cap question component
+  const FactOrCapQuestion = ({ data }) => (
+    <View style={styles.questionContent}>
+      <View style={styles.factCapHeader}>
+        <Text style={styles.questionTag}>❓ Question:</Text>
+        <Text style={styles.factCapText}>"{data.statement}"</Text>
+      </View>
+      
+      <View style={styles.optionsContainer}>
+        <TouchableOpacity 
+          style={[
+            styles.factCapButton,
+            selectedAnswer === 'fact' && data.correctAnswer === 'fact' && showFeedback && styles.correctOptionButton,
+            selectedAnswer === 'fact' && data.correctAnswer !== 'fact' && showFeedback && styles.wrongOptionButton,
+          ]}
+          onPress={() => handleAnswer('fact')}
+          disabled={showFeedback}
+        >
+          <AntDesign name="checkcircle" size={16} color="#4caf50" style={styles.factCapIcon} />
+          <Text style={styles.factCapButtonText}>Fact</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity 
+          style={[
+            styles.factCapButton,
+            selectedAnswer === 'cap' && data.correctAnswer === 'cap' && showFeedback && styles.correctOptionButton,
+            selectedAnswer === 'cap' && data.correctAnswer !== 'cap' && showFeedback && styles.wrongOptionButton,
+          ]}
+          onPress={() => handleAnswer('cap')}
+          disabled={showFeedback}
+        >
+          <AntDesign name="closecircle" size={16} color="#f44336" style={styles.factCapIcon} />
+          <Text style={styles.factCapButtonText}>Cap (Not true)</Text>
         </TouchableOpacity>
       </View>
-
-      {/* Progress Bar */}
-      <View style={styles.progressContainer}>
-        <View style={styles.progressBar}>
-          <View 
-            style={[styles.progressFill, { width: `${(currentStep / steps.length) * 100}%` }]} 
-          />
-        </View>
-      </View>
-
-      <ScrollView style={styles.contentScrollView}>
-        {/* Step Title */}
-        <View style={styles.stepTitleContainer}>
-          <Text style={styles.stepNumber}>Step {currentStep}: {currentStepData.title}</Text>
-          <Text style={styles.stepDetailText}>{`Step ${currentStep}: ${currentStepData.title}`}</Text>
-        </View>
-
-        {/* Step Image */}
-        <View style={styles.imageContainer}>
-          <Image 
-            source={{ uri: currentStepData.image }} 
-            style={styles.stepImage}
-          />
-          
-          {/* Video Controls Overlay */}
-          <View style={styles.videoControls}>
-            <TouchableOpacity style={styles.playButton}>
-              <Ionicons name="play" size={24} color="#fff" />
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Step Description */}
-        <View style={styles.descriptionContainer}>
-          <Text style={styles.description}>{currentStepData.description}</Text>
-        </View>
-
-        {/* Navigation Buttons */}
-        <View style={styles.navigationButtons}>
-          <TouchableOpacity 
-            style={[styles.navButton, styles.backButton]}
-            onPress={handleBack}
-          >
-            <Text style={styles.backButtonText}>Back</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={[styles.navButton, styles.nextButton]}
-            onPress={handleNext}
-          >
-            <Text style={styles.nextButtonText}>Next</Text>
-            <Ionicons name="chevron-forward" size={20} color="#fff" />
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
     </View>
+  );
+
+  // Results screen shown after completing all questions
+  const ResultsScreen = () => (
+    <View style={styles.resultsContainer}>
+      <Text style={styles.resultsTitle}>Quiz Completed!</Text>
+      
+      <View style={styles.scoreCircle}>
+        <Text style={styles.scoreText}>{score}</Text>
+        <Text style={styles.scoreLabel}>points</Text>
+      </View>
+      
+      <Text style={styles.resultsSummary}>
+        You've completed all 5 questions in the Facts or Cap quiz!
+      </Text>
+      
+      <TouchableOpacity 
+        style={styles.playAgainButton}
+        onPress={() => {
+          setCurrentQuestion(0);
+          setScore(0);
+          setSelectedAnswer(null);
+          setShowFeedback(false);
+          setQuizCompleted(false);
+        }}
+      >
+        <Text style={styles.playAgainButtonText}>Play Again</Text>
+      </TouchableOpacity>
+      
+      <TouchableOpacity 
+        style={styles.backToTrainingButton}
+        onPress={() => navigation.navigate('Training')}
+      >
+        <Text style={styles.backToTrainingText}>Back to Training</Text>
+      </TouchableOpacity>
+    </View>
+  );
+
+  return (
+    <SafeAreaView style={styles.container}>
+
+      {/* Header with Logo and Settings */}
+        <View style={styles.header}>
+            <View style={styles.headerLeft}>
+            <Image 
+                source={{ uri: 'https://api.a0.dev/assets/image?text=ResqWise+Logo+ECG+Heart+Line&aspect=1:1&seed=123' }} 
+                style={styles.logo}
+            />
+            <Text style={styles.logoText}>RESQWISE</Text>
+            </View>
+            <TouchableOpacity onPress={() => navigation.navigate('Settings')}>
+            <Ionicons name="settings-outline" size={24} color="#333" />
+            </TouchableOpacity>
+        </View>
+      <ScrollView style={styles.scrollView}>
+
+        {/* Game Header */}
+        <View style={styles.gameHeaderContainer}>
+          <View style={styles.gameHeader}>
+            <Text style={styles.gameTitle}>CPR Quiz!</Text>
+            <View style={styles.fireEmoji}>
+              <Text style={styles.emojiText}>🔥</Text>
+            </View>
+          </View>
+          <Text style={styles.gameProgress}>Question {currentQuestion + 1} of {questions.length}</Text>
+          
+          {/* Progress Bar */}
+          <ProgressBar current={currentQuestion} total={questions.length} />
+        </View>
+
+        {!quizCompleted ? (
+          <>
+            {/* Question Content */}
+            <View style={styles.questionCard}>
+              {currentQuestionData.type === 'roleplay' ? (
+                <RolePlayQuestion data={currentQuestionData} />
+              ) : (
+                <FactOrCapQuestion data={currentQuestionData} />
+              )}
+            </View>
+            
+            {/* Feedback card (shown after selection) */}
+            {showFeedback && feedback && (
+              <View style={[
+                styles.feedbackCard,
+                feedback.isCorrect ? styles.correctFeedbackCard : styles.incorrectFeedbackCard
+              ]}>
+                <Text style={styles.feedbackTitle}>{feedback.text}</Text>
+                <Text style={styles.feedbackPoints}>{feedback.points}</Text>
+                <Text style={styles.feedbackExplanation}>{feedback.explanation}</Text>
+                
+                <TouchableOpacity 
+                  style={styles.nextButton}
+                  onPress={handleNextQuestion}
+                >
+                  <Text style={styles.nextButtonText}>Next Question</Text>
+                  <MaterialIcons name="navigate-next" size={20} color="#fff" />
+                </TouchableOpacity>
+              </View>
+            )}
+          </>
+        ) : (
+          <ResultsScreen />
+        )}
+
+        {!quizCompleted && !showFeedback && (
+          <View style={styles.helperContainer}>
+            <Text style={styles.helperText}>Select an answer to continue</Text>
+          </View>
+        )}
+      </ScrollView>
+
+      {/* Bottom Navigation */}
+      <View style={styles.bottomNav}>
+        <TouchableOpacity 
+          style={styles.navItem}
+          onPress={() => navigation.navigate('Dashboard')}
+        >
+          <Ionicons name="home" size={24} color="#777" />
+          <Text style={styles.navText}>Home</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity 
+          style={styles.navItem}
+          onPress={() => navigation.navigate('FirstAid')}
+        >
+          <FontAwesome5 name="first-aid" size={24} color="#777" />
+          <Text style={styles.navText}>First Aid</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity 
+          style={styles.navItem}
+          onPress={() => navigation.navigate('ARGuide')}
+        >
+          <MaterialCommunityIcons name="navigation-variant" size={24} color="#777" />
+          <Text style={styles.navText}>AR Guide</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity 
+          style={styles.navItem}
+          onPress={() => navigation.navigate('AIWoundAnalyser')}
+        >
+          <MaterialCommunityIcons name="microscope" size={24} color="#777" />
+          <Text style={styles.navText}>AI Analyser</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity 
+          style={styles.navItem}
+          onPress={() => navigation.navigate('Training')}
+        >
+          <Ionicons name="school" size={24} color="#4263eb" />
+          <Text style={[styles.navText, styles.activeNav]}>Training</Text>
+        </TouchableOpacity>
+      </View>
+    </SafeAreaView>
   );
 }
 
@@ -158,155 +386,314 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f5f6fa',
   },
-  header: {
-    backgroundColor: '#f44336',
-    paddingTop: 50,
-    paddingBottom: 15,
-    paddingHorizontal: 20,
+  scrollView: {
+    flex: 1,
+    paddingHorizontal: 15,
+    paddingTop: 15,
   },
-  headerContent: {
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingTop: 20,
+    paddingBottom: 20,
+    paddingHorizontal: 15,
+    borderBottomColor: '#f0f0f0',
+    backgroundColor: 'white',
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  logo: {
+    width: 30,
+    height: 30,
+    resizeMode: 'contain',
+  },
+  logoText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#4263eb',
+    marginLeft: 8,
+  },
+  gameHeaderContainer: {
+    marginBottom: 20,
+  },
+  gameHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  gameTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 5,
+  },
+  fireEmoji: {
+    marginLeft: 8,
+  },
+  emojiText: {
+    fontSize: 24,
+  },
+  gameProgress: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 8,
+  },
+  progressBarContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    marginTop: 5,
   },
-  headerTitle: {
-    color: 'white',
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  voiceToggleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 15,
-    backgroundColor: 'white',
-  },
-  voiceToggleText: {
+  progressSegment: {
     flex: 1,
-    marginLeft: 8,
-    fontSize: 15,
-    color: '#333',
+    height: 8,
+    marginHorizontal: 2,
+    borderRadius: 4,
   },
-  toggleSwitch: {
-    width: 46,
-    height: 24,
-    borderRadius: 12,
-    padding: 2,
+  progressSegmentFilled: {
+    backgroundColor: '#4263eb',
   },
-  toggleSwitchOn: {
-    backgroundColor: '#4caf50',
-  },
-  toggleSwitchOff: {
+  progressSegmentEmpty: {
     backgroundColor: '#e0e0e0',
   },
-  toggleButton: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
+  questionCard: {
     backgroundColor: 'white',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
-  toggleButtonOn: {
-    marginLeft: 20,
+  questionContent: {
+    width: '100%',
   },
-  toggleButtonOff: {
-    marginLeft: 0,
+  scenarioHeader: {
+    backgroundColor: '#b3c2ff',
+    padding: 16,
+    borderRadius: 8,
+    marginBottom: 16,
   },
-  progressContainer: {
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    backgroundColor: 'white',
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+  scenarioText: {
+    fontSize: 18,
+    fontWeight: '600',
+    textAlign: 'center',
+    color: '#111',
   },
-  progressBar: {
-    height: 6,
-    backgroundColor: '#e9ecef',
-    borderRadius: 3,
-    overflow: 'hidden',
+  scenarioImage: {
+    width: '100%',
+    height: 200,
+    borderRadius: 8,
+    marginBottom: 16,
+    resizeMode: 'cover',
   },
-  progressFill: {
-    height: '100%',
-    backgroundColor: '#4caf50',
+  factCapHeader: {
+    backgroundColor: '#b3c2ff',
+    padding: 16,
+    borderRadius: 8,
+    marginBottom: 16,
   },
-  contentScrollView: {
-    flex: 1,
+  questionTag: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 8,
+    color: '#111',
   },
-  stepTitleContainer: {
-    paddingVertical: 20,
-    paddingHorizontal: 20,
+  factCapText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#111',
   },
-  stepNumber: {
+  optionsContainer: {
+    marginVertical: 8,
+  },
+  optionButton: {
+    backgroundColor: '#ffffff',
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    borderRadius: 8,
+    padding: 16,
+    marginBottom: 12,
+    alignItems: 'center',
+  },
+  optionText: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#333',
+  },
+  factCapButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ffffff',
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    borderRadius: 8,
+    padding: 16,
+    marginBottom: 12,
+  },
+  factCapIcon: {
+    marginRight: 10,
+  },
+  factCapButtonText: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#333',
+  },
+  correctOptionButton: {
+    backgroundColor: '#e8f5e9',
+    borderColor: '#4caf50',
+  },
+  wrongOptionButton: {
+    backgroundColor: '#ffebee',
+    borderColor: '#f44336',
+  },
+  feedbackCard: {
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  correctFeedbackCard: {
+    backgroundColor: '#e8f5e9',
+  },
+  incorrectFeedbackCard: {
+    backgroundColor: '#ffebee',
+  },
+  feedbackTitle: {
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 4,
   },
-  stepDetailText: {
-    color: '#666',
-    fontSize: 14,
-  },
-  imageContainer: {
-    position: 'relative',
-    width: '100%',
-    height: width * 0.7, // Aspect ratio for the image container
-  },
-  stepImage: {
-    width: '100%',
-    height: '100%',
-    resizeMode: 'cover',
-  },
-  videoControls: {
-    position: 'absolute',
-    bottom: 15,
-    right: 15,
-  },
-  playButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  descriptionContainer: {
-    padding: 20,
-  },
-  description: {
+  feedbackPoints: {
     fontSize: 16,
-    lineHeight: 24,
-    color: '#333',
+    fontWeight: '600',
+    marginBottom: 12,
   },
-  navigationButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 30,
-  },
-  navButton: {
-    borderRadius: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    minWidth: 100,
-  },
-  backButton: {
-    backgroundColor: '#f0f2ff',
-    borderWidth: 1,
-    borderColor: '#4263eb',
+  feedbackExplanation: {
+    fontSize: 14,
+    lineHeight: 20,
+    marginBottom: 16,
   },
   nextButton: {
     backgroundColor: '#4263eb',
-  },
-  backButtonText: {
-    color: '#4263eb',
-    fontSize: 16,
-    fontWeight: '600',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
   },
   nextButtonText: {
-    color: 'white',
+    color: '#fff',
     fontSize: 16,
     fontWeight: '600',
     marginRight: 4,
+  },
+  helperContainer: {
+    marginBottom: 30,
+  },
+  helperText: {
+    textAlign: 'center',
+    color: '#777',
+    fontSize: 14,
+  },
+  resultsContainer: {
+    backgroundColor: 'white',
+    borderRadius: 12,
+    padding: 24,
+    marginBottom: 30,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  resultsTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 24,
+    color: '#4263eb',
+  },
+  scoreCircle: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: '#4263eb',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  scoreText: {
+    fontSize: 36,
+    fontWeight: 'bold',
+    color: '#ffffff',
+  },
+  scoreLabel: {
+    fontSize: 16,
+    color: '#ffffff',
+  },
+  resultsSummary: {
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 24,
+    lineHeight: 22,
+    color: '#333',
+  },
+  playAgainButton: {
+    backgroundColor: '#4263eb',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    marginBottom: 12,
+    width: '100%',
+    alignItems: 'center',
+  },
+  playAgainButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  backToTrainingButton: {
+    backgroundColor: '#f5f6fa',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    width: '100%',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#ddd',
+  },
+  backToTrainingText: {
+    color: '#333',
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  bottomNav: {
+    flexDirection: 'row',
+    backgroundColor: 'white',
+    paddingVertical: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#f0f0f0',
+  },
+  navItem: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  navText: {
+    fontSize: 12,
+    marginTop: 4,
+    color: '#777',
+  },
+  activeNav: {
+    color: '#4263eb',
+    fontWeight: '500',
   },
 });
