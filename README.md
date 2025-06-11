@@ -16,7 +16,7 @@ git remote add origin https://github.com/your-username/your-repo.git
 ```
 cd application-reqwise
 npm add expo
-npx expo start
+npx expo start --tunnel
 ```
 
 4. For the backend:
