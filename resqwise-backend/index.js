@@ -85,7 +85,7 @@ app.post('/analyze', upload.single('image'), async (req, res) => {
     }
 
     const resultJson = JSON.parse(cleaned);
-    res.json(resultJson);
+    res.json(resultJson);   //returns back to the frontend as a response
     } 
     catch (err) {
         console.error('Failed to parse JSON from OpenRouter response:', resultText);
