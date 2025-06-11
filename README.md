@@ -9,6 +9,9 @@ An all-in-one mobile app that empowers anyone to respond to emergencies through 
 ```
 git remote -v
 git remote add origin https://github.com/your-username/your-repo.git
+cd application-reqwise
+npm add expo
+npx expo start
 ```
 
 ## Expo
