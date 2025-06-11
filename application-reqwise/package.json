@@ -28,7 +28,14 @@
     "react-native-safe-area-context": "5.4.0",
     "react-native-screens": "^4.11.1",
     "react-native-web": "^0.20.0",
+<<<<<<< HEAD
+    "sonner-native": "^0.20.0",
+    "expo-sensors": "~14.1.4",
+    "expo-location": "~18.1.5",
+    "react-native-webview": "13.13.5"
+=======
     "sonner-native": "^0.20.0"
+>>>>>>> origin/master
   },
   "devDependencies": {
     "@babel/core": "^7.20.0"

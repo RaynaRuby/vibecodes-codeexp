@@ -11,6 +11,8 @@ import CPRQuizScreen from "./CPRQuizScreen";
 import ARFirstAidScreen from "./ARFirstAidScreen";
 import ARGuideScreen from "./ARGuideScreen";
 import AIWoundAnalyserScreen from "./AIWoundAnalyserScreen";
+import ARNavigationScreen from "./ARNavScreen";
+import LocationDetailScreen from './LocationDetailScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -26,6 +28,8 @@ function RootStack() {
       <Stack.Screen name="ARGuide" component={ARGuideScreen} />
       <Stack.Screen name="AIWoundAnalyser" component={AIWoundAnalyserScreen} />
       <Stack.Screen name="Home" component={OnboardingScreen} />
+      <Stack.Screen name="ARNavigation" component={ARNavigationScreen} />
+      <Stack.Screen name="LocationDetail" component={LocationDetailScreen} options={{ title: 'Details' }} />
     </Stack.Navigator>
   );
 }
