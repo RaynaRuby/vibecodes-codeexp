@@ -9,10 +9,24 @@ An all-in-one mobile app that empowers anyone to respond to emergencies through 
 ```
 git remote -v
 git remote add origin https://github.com/your-username/your-repo.git
+```
+
+3. For the frontend:
+
+```
 cd application-reqwise
 npm add expo
 npx expo start
 ```
+
+4. For the backend:
+
+```
+cd resqwise-backend
+npm install
+npm start
+```
+
 
 ## Expo
 
