@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons, MaterialIcons, FontAwesome5, MaterialCommunityIcons } from '@expo/vector-icons';
+import cprTrainingMod from "./cprTrainingMod";
 
 export default function TrainingScreen() {
   const navigation = useNavigation();
@@ -132,7 +133,7 @@ export default function TrainingScreen() {
 
                 <TouchableOpacity 
                   style={styles.startButton}
-                  onPress={() => navigation.navigate('ModuleDetail', { moduleId: module.id })}
+                  onPress={() => navigation.navigate('cprTrainingMod', { moduleId: module.id })}
                 >
                   <Text style={styles.startButtonText}>Start Learning</Text>
                 </TouchableOpacity>
