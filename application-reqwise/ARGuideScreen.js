@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons, MaterialIcons, FontAwesome5, MaterialCommunityIcons } from '@expo/vector-icons';
-
+import ARNavigationScreen from './ARNavScreen';
 
 export default function ARGuideScreen() {
   const navigation = useNavigation();
@@ -76,7 +76,30 @@ export default function ARGuideScreen() {
           />
           <TouchableOpacity 
             style={styles.startNavigationButton}
-            onPress={() => Alert.alert("Coming Soon", "This feature is under development. Stay tuned!")}
+            onPress={() => {
+              Alert.alert(
+                "Choose Destination",
+                "Where would you like to go?",
+                [
+                  {
+                    text: "Hospital",
+                    onPress: () => navigation.navigate('ARNavigation', { destinationType: 'Hospital' })
+                  },
+                  {
+                    text: "First Aid",
+                    onPress: () => navigation.navigate('ARNavigation', { destinationType: 'First Aid Station' })
+                  },
+                  {
+                    text: "Shelter",
+                    onPress: () => navigation.navigate('ARNavigation', { destinationType: 'Emergency Shelter' })
+                  },
+                  {
+                    text: "Cancel",
+                    style: "cancel"
+                  }
+                ]
+              );
+            }}
           >
             <Text style={styles.startNavigationButtonText}>Start Navigation</Text>
           </TouchableOpacity>
